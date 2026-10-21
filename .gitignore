@@ -1,0 +1,48 @@
+# 本机业务数据与运行记录
+/data/
+/runtime/
+/logs/
+/backups/
+.dsh-worktable/
+.medresearch-workbench-installation.json
+
+# 构建、打包与本机依赖
+/dist/
+/release/
+node_modules/
+*.zip
+*.tgz
+
+# 内部验收、截图与危险清理脚本
+/verify/
+/scripts/clean-data.mjs
+
+# 环境变量、凭据与私钥
+.env
+.env.*
+.credentials*
+*credentials*.json
+*credentials*.yaml
+*credentials*.yml
+*.pem
+*.key
+*.pfx
+*.p12
+id_rsa*
+id_ed25519*
+
+# 日志、数据库、备份与系统临时文件
+*.log
+*.pid
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-wal
+*.db-shm
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db
+/tools/biomcp.exe
