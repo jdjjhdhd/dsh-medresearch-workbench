@@ -204,7 +204,7 @@ function physicalPackageInfo(target) {
   if (readdirSync(join(target, 'src')).some((name) => name !== 'host')) throw new Error('实体插件 src 含未知目录，拒绝移动。');
   for (const [directory, names] of [
     ['lib', ['index.js', 'client.js']],
-    ['src/host', ['constants.js', 'http.js', 'installation.js', 'llm.js', 'prompts.js', 'routes.js', 'service.js', 'store.js']],
+    ['src/host', ['constants.js', 'http.js', 'installation.js', 'market-deployment.js', 'llm.js', 'prompts.js', 'routes.js', 'service.js', 'store.js']],
   ]) {
     for (const entry of readdirSync(join(target, directory), { withFileTypes: true })) {
       if (!entry.isFile() || !names.includes(entry.name)) throw new Error(`实体插件运行目录含未知内容，拒绝移动：${directory}/${entry.name}`);
