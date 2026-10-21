@@ -1,0 +1,32 @@
+{
+  "name": "BioMCP",
+  "version": "0.9.3",
+  "platform": "windows-x86_64",
+  "license": "MIT",
+  "licenseFile": "BioMCP-LICENSE.txt",
+  "licenseSource": "https://raw.githubusercontent.com/genomoncology/biomcp/v0.9.3/LICENSE",
+  "repository": "https://github.com/genomoncology/biomcp",
+  "release": "https://github.com/genomoncology/biomcp/releases/tag/v0.9.3",
+  "binary": {
+    "file": "biomcp.exe",
+    "sizeBytes": 47588352,
+    "sha256": "2e7a82c7e1a3c7bd056cb22d858c477f6f7f285d5f2dcacdc54324f4e5710d9b"
+  },
+  "upstreamArchive": {
+    "file": "biomcp-windows-x86_64.zip",
+    "url": "https://github.com/genomoncology/biomcp/releases/download/v0.9.3/biomcp-windows-x86_64.zip",
+    "sizeBytes": 17627555,
+    "sha256": "29dc53bf037c9d210280b6317e6155b84cd82f2c357a94046b9d5053b1c9a881"
+  },
+  "runtime": {
+    "architecture": "x64",
+    "observedImports": ["VCRUNTIME140.dll", "Universal C Runtime"],
+    "redistributableInfo": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+    "note": "The official executable needs compatible Windows runtime libraries. A successful startup on one machine does not establish their availability on every customer machine."
+  },
+  "verification": {
+    "date": "2026-10-21",
+    "archiveDigestMatchedOfficialReleaseMetadata": true,
+    "binaryDigestMatchedOfficialArchive": true
+  }
+}
