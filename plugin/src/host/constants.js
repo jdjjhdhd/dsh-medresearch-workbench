@@ -1,5 +1,5 @@
 export const PLUGIN_ID = 'dsh-medresearch-model';
-export const PLUGIN_VERSION = '0.2.3';
+export const PLUGIN_VERSION = '0.2.4';
 export const ROUTE_PREFIX = '/api/medresearch/model';
 export const SETTINGS_VERSION = 1;
 export const DEFAULT_MODE = 'dsh';

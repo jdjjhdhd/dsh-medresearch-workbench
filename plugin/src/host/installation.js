@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ensureMarketDeployment, isMarketPackageRoot } from './market-deployment.js';
 
 export const INSTALLATION_FILENAME = '.medresearch-workbench-installation.json';
 export const INSTALLATION_PLUGIN_ID = 'dsh-medresearch-model';
@@ -100,6 +101,16 @@ export function resolveInstallation({ moduleUrl = import.meta.url, profileDir = 
     const loadedPluginDir = realpathSync(resolve(dirname(fileURLToPath(moduleUrl)), '..', '..'));
     const loadedPackage = packageInfo(loadedPluginDir);
     const direct = validateInstallationRoot(dirname(loadedPluginDir));
+    // 市场包位于 node_modules；业务资料需放到独立、持久的工作台目录。
+    if (!direct.ok && isMarketPackageRoot(dirname(loadedPluginDir))) {
+      return ensureMarketDeployment({
+        packageRoot: dirname(loadedPluginDir),
+        profileDir,
+        validateRoot: validateInstallationRoot,
+        createRecord: createInstallationRecord,
+        runtimeHash: pluginRuntimeHash,
+      });
+    }
     if (profileDir) {
       if (typeof profileDir !== 'string' || !isAbsolute(profileDir)) throw new Error('宿主 profile 目录无效。');
       profile = realpathSync(profileDir);
