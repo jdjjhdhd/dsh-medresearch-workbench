@@ -1,0 +1,5 @@
+# 医学研究工作台宿主插件：把模型/工作台信息/本地文件服务以同源 /api 路由暴露给自定义窗口。
+# 工作台项目入口由同包的客户端初始化器（dsh.client）完成；配置修改以重启 DSH 为准。
+- insert:
+    - id: medresearch-model
+      name: dsh-medresearch-model
