@@ -326,9 +326,9 @@ test('installer treats spaces and shell metacharacters as literal filesystem pat
   assert.equal(existsSync(join(root, '医学研究工作台.html')), true);
 });
 
-test('0.2.2 physical installation upgrades to 0.2.3 and rollback restores its exact directory and registration', (t) => {
+test('0.2.2 physical installation upgrades to 0.2.4 and rollback restores its exact directory and registration', (t) => {
   const f = fixture(t), old = f.customer('old'), current = f.customer('new'), profile = f.profile();
-  assert.equal(readJson(join(current, 'plugin/package.json')).version, '0.2.3');
+  assert.equal(readJson(join(current, 'plugin/package.json')).version, '0.2.4');
   // 0.2.2 没有新的安装定位模块，升级身份检查不能依赖它存在。
   rmSync(join(old, 'plugin/src/host/installation.js'));
   const target = physicalInstall(old, profile, '0.2.2');
@@ -339,7 +339,7 @@ test('0.2.2 physical installation upgrades to 0.2.3 and rollback restores its ex
   const backup = lastBackup(profile);
   assert.deepEqual(treeSnapshot(join(backup, 'plugin-copy')), original);
   assert.equal(lstatSync(target).isSymbolicLink(), true);
-  assert.equal(readJson(join(target, 'package.json')).version, '0.2.3');
+  assert.equal(readJson(join(target, 'package.json')).version, '0.2.4');
   expectSuccess(install(current, profile, '--verify'));
   const manifest = readJson(join(profile, 'package.json'));
   manifest.dependencies['later-plugin'] = '2.0.0';
