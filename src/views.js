@@ -654,6 +654,7 @@
     openModal({ title: '添加资料', body: body, hideSubmit: true, focus: false });
   }
   function openLocalFileModal(topicId) {
+    APP.ui.attachItemId = '';
     var body = '<div class="formGrid">' +
       '<div class="field span2"><label>本地文件</label><input class="input" name="filePath" required placeholder="绝对路径，例如 D:\\papers\\paper.pdf；或点击下方选择文件上传到项目" /></div>' +
       '<div class="field span2"><div class="flex"><button type="button" class="btn btnPrimary" data-act="pickPdf">选择 PDF 文件并保存到本机</button><span class="muted">本地文件服务会自动检测/启动；也可直接粘贴路径。</span></div></div>' +
@@ -738,6 +739,7 @@
       if (!r.ok) throw new Error((r.json && r.json.error && r.json.error.message) || ('HTTP ' + r.status));
       var z = r.json.item;
       var pdf = (z.children.attachments || []).filter(function (a) { return /pdf/i.test(a.contentType) || /\.pdf$/i.test(a.filename); })[0];
+      var selfAttachment = z.zoteroItemType === 'attachment' ? (z.children.attachments || []).filter(function (a) { return a.key === z.zoteroKey; })[0] : null;
       var res = upsertItem({
         title: z.title,
         type: z.zoteroItemType === 'journalArticle' ? '期刊文献' : z.zoteroItemType === 'conferencePaper' ? '会议摘要' : '其他',
@@ -751,6 +753,8 @@
         zoteroKey: z.zoteroKey,
         zoteroRef: z.zoteroRef,
         zoteroItemType: z.zoteroItemType,
+        zoteroContentType: selfAttachment ? selfAttachment.contentType : '',
+        zoteroFilename: selfAttachment ? selfAttachment.filename : '',
         attachmentKey: pdf ? pdf.key : '',
         tags: z.tags,
         annotations: (z.children.annotations || []).map(function (a) {
@@ -762,6 +766,11 @@
         topicIds: APP.zoteroTopicId ? [APP.zoteroTopicId] : [],
         source: { type: 'zotero', label: 'Zotero 本地库', at: Date.now() }
       });
+      if (selfAttachment) {
+        res.item.zoteroContentType = str(selfAttachment.contentType) || res.item.zoteroContentType;
+        res.item.zoteroFilename = str(selfAttachment.filename) || res.item.zoteroFilename;
+      }
+      res.item.attachmentKey = normalizeItem(res.item).attachmentKey;
       var importedNotes = 0;
       (z.children.notes || []).forEach(function (n) {
         if (!n.body) return;

@@ -80,7 +80,7 @@
     }
     if (READER.status === 'abstract') {
       var meta = '<div class="chips" style="margin-bottom:10px"><span class="chip chipWarn">仅摘要</span><span class="chip">未读取全文</span>' + (item.doi ? '<span class="chip chipKey mono">DOI ' + esc(item.doi) + '</span>' : '') + (item.pmid ? '<span class="chip chipKey mono">PMID ' + esc(item.pmid) + '</span>' : '') + '</div>';
-      return '<div class="readerText" id="readerText">' + meta + '<h3>' + esc(item.title) + '</h3><div class="muted" style="margin-bottom:12px">' + esc(itemMetaLine(item)) + '</div>' + (item.abstract ? item.abstract.split(/\n{2,}/).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') : '<p class="muted">没有可用的摘要或全文。可粘贴全文后再提问。</p>') + '<div class="flex" style="margin-top:14px"><button class="btn btnMini" data-act="pasteFulltext">粘贴全文以提高问答依据</button>' + (item.url ? '<button class="btn btnMini" data-act="openExternal" data-url="' + esc(item.url) + '">打开来源链接</button>' : '') + '</div></div>';
+      return '<div class="readerText" id="readerText">' + meta + '<h3>' + esc(item.title) + '</h3><div class="muted" style="margin-bottom:12px">' + esc(itemMetaLine(item)) + '</div>' + (item.abstract ? item.abstract.split(/\n{2,}/).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') : '<p class="muted">没有可用的摘要或全文。可以为本资料关联自己的 PDF，或粘贴全文后再提问。</p>') + '<div class="flex" style="margin-top:14px"><button class="btn btnPrimary btnMini" data-act="attachPdf" data-id="' + esc(item.id) + '">为本资料选择 / 关联 PDF</button><button class="btn btnMini" data-act="pasteFulltext">粘贴全文以提高问答依据</button>' + (item.url ? '<button class="btn btnMini" data-act="openExternal" data-url="' + esc(item.url) + '">打开来源链接</button>' : '') + '</div></div>';
     }
     if (READER.status === 'idle') {
       return '<div class="pdfState">正在准备原文…</div>';
@@ -149,7 +149,7 @@
       '<div class="k">页数</div><div class="v">' + (READER.numPages || '—') + '</div>' +
       '<div class="k">可问答文本</div><div class="v">' + (textLen ? textLen.toLocaleString() + ' 字符 · ' + READER.textChunks.length + ' 段' : (READER.status === 'abstract' ? '仅摘要' : '尚未提取')) + '</div>' +
       '</div>' +
-      '<div class="divider"></div><div class="flex"><button class="btn btnMini" data-act="reloadPdf">重新解析</button><button class="btn btnMini" data-act="openPdfFile">打开原文件</button><button class="btn btnMini" data-act="pasteFulltext">粘贴全文</button><button class="btn btnMini" data-act="sendNative">交给原生会话</button></div>' +
+      '<div class="divider"></div><div class="flex">' + (!item.filePath && !item.attachmentKey ? '<button class="btn btnPrimary btnMini" data-act="attachPdf" data-id="' + esc(item.id) + '">关联本地 PDF</button>' : '') + '<button class="btn btnMini" data-act="reloadPdf">重新解析</button><button class="btn btnMini" data-act="openPdfFile">打开原文件</button><button class="btn btnMini" data-act="pasteFulltext">粘贴全文</button><button class="btn btnMini" data-act="sendNative">交给原生会话</button></div>' +
       '<div class="sub mt12">批注只记录当前 PDF 的页码与引文；如果原文版本不同，页码可能不一致。无法定位的引文会如实显示，不生成不存在的页码。</div>';
   }
 

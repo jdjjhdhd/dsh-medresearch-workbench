@@ -88,11 +88,13 @@
   });
   $('#filePdf').addEventListener('change', function () {
     var file = this.files && this.files[0];
+    var attachId = APP.ui.attachItemId || '';
+    APP.ui.attachItemId = '';
     this.value = '';
-    if (file) uploadPdfFile(file);
+    if (file) uploadPdfFile(file, attachId);
   });
 
-  async function uploadPdfFile(file) {
+  async function uploadPdfFile(file, attachItemId) {
     if (!APP.bridge.online) {
       toast('上传需要本地服务；也可以直接填写本机绝对路径');
       return;
@@ -117,17 +119,40 @@
       }, 90000);
       if (!r.ok) throw new Error((r.json && r.json.error && r.json.error.message) || ('HTTP ' + r.status));
       var p = r.json.path;
-      var res = upsertItem({
-        title: file.name.replace(/\.pdf$/i, ''),
-        type: '期刊文献',
-        filePath: p,
-        source: { type: 'local', label: '本地上传', at: Date.now() }
-      });
-      markDirty({ immediate: true });
-      closeModal();
-      render();
-      toast(res && res.merged ? '已合并到现有资料' : 'PDF 已加入资料库');
+      var attached = attachItemId ? findItem(attachItemId) : null;
+      if (attachItemId && !attached) {
+        APP.ui.attachItemId = '';
+        toast('原资料已不存在，未创建新资料');
+        return;
+      }
+      if (attached) {
+        attached.filePath = p;
+        attached.attachmentKey = '';
+        attached.updatedAt = Date.now();
+        attached.lastOpenedAt = Date.now();
+        if (attached.readStatus === 'unread') attached.readStatus = 'reading';
+        if (!attached.source || attached.source.type === 'manual') {
+          attached.source = { type: 'local', label: '关联本地 PDF', at: Date.now() };
+        }
+        markDirty({ immediate: true });
+        closeModal();
+        APP.ui.attachItemId = '';
+        openReader(attached.id);
+        toast('PDF 已关联到当前资料');
+      } else {
+        var res = upsertItem({
+          title: file.name.replace(/\.pdf$/i, ''),
+          type: '期刊文献',
+          filePath: p,
+          source: { type: 'local', label: '本地上传', at: Date.now() }
+        });
+        markDirty({ immediate: true });
+        closeModal();
+        render();
+        toast(res && res.merged ? '已合并到现有资料' : 'PDF 已加入资料库');
+      }
     } catch (err) {
+      APP.ui.attachItemId = '';
       toast('上传失败：' + apiErrorMessage(err));
     }
   }

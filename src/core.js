@@ -50,7 +50,8 @@
       reader: { q: '', filter: 'all', tab: 'notes', showList: false, aside: false },
       search: { tab: 'lit', q: '', disease: '', drug: '', yearFrom: '', yearTo: '', phase: '', trialStatus: '', status: '', intervention: '', condition: '' },
       cases: {},
-      tasks: { q: '', priority: '', status: '' }
+      tasks: { q: '', priority: '', status: '' },
+      attachItemId: ''
     },
     search: { loading: false, error: '', results: { lit: null, trials: null, drug: null }, meta: { lit: null, trials: null, drug: null } },
     drawer: { type: '', id: '' },
@@ -393,6 +394,17 @@
     var id = str(x.id) || uid('it');
     var title = str(x.title) || '(未命名资料)';
     var status = READ_STATUS[x.readStatus] ? x.readStatus : 'unread';
+    var zoteroContentType = str(x.zoteroContentType);
+    var zoteroFilename = str(x.zoteroFilename);
+    var attachmentKey = str(x.attachmentKey);
+    if (str(x.filePath)) attachmentKey = '';
+    else if (str(x.zoteroItemType) === 'attachment') {
+      var mime = zoteroContentType.toLowerCase().split(';')[0].trim();
+      var isPdf = mime ? mime === 'application/pdf' || mime === 'application/x-pdf'
+        || (mime === 'application/octet-stream' && /\.pdf$/i.test(zoteroFilename)) : /\.pdf$/i.test(zoteroFilename);
+      if ((mime || zoteroFilename) && !isPdf) attachmentKey = '';
+      else attachmentKey = attachmentKey || str(x.zoteroKey);
+    }
     return {
       id: id,
       title: title,
@@ -406,7 +418,9 @@
       zoteroKey: str(x.zoteroKey),
       zoteroRef: str(x.zoteroRef),
       zoteroItemType: str(x.zoteroItemType),
-      attachmentKey: str(x.attachmentKey),
+      zoteroContentType: zoteroContentType,
+      zoteroFilename: zoteroFilename,
+      attachmentKey: attachmentKey,
       abstract: str(x.abstract),
       url: str(x.url),
       filePath: str(x.filePath),
@@ -1280,6 +1294,7 @@
       case 'addItem': openAddMenu(el.getAttribute('data-topic') || ''); break;
       case 'addZotero': openZoteroModal(el.getAttribute('data-topic') || ''); break;
       case 'addLocal': openLocalFileModal(el.getAttribute('data-topic') || ''); break;
+      case 'attachPdf': APP.ui.attachItemId = id; $('#filePdf').click(); break;
       case 'addManual': openItemModal({ topicId: el.getAttribute('data-topic') || '' }); break;
       case 'demoClear': clearDemoData(); break;
       case 'demoAdd': addDemoData(); break;
