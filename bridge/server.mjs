@@ -24,7 +24,7 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const VERSION = '0.2.3';
+const VERSION = '0.2.4';
 const SERVICE_ID = 'medresearch-workbench-bridge';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -835,14 +835,27 @@ async function zoteroCollections() {
   return rows.map((c) => ({ key: c.key, name: c.data?.name || '', parent: c.data?.parentCollection || false }));
 }
 
-async function zoteroItem(key) {
-  const r = await zoteroFetch(`/users/0/items/${encodeURIComponent(key)}`, 10000);
+function zoteroAttachmentToRecord(item) {
+  const d = item.data || {};
+  return {
+    key: item.key,
+    title: String(d.title || d.filename || '附件'),
+    contentType: String(d.contentType || ''),
+    filename: String(d.filename || ''),
+    linkMode: String(d.linkMode || ''),
+  };
+}
+
+export async function zoteroItem(key, { fetchItem = zoteroFetch } = {}) {
+  const r = await fetchItem(`/users/0/items/${encodeURIComponent(key)}`, 10000);
   if (!r.ok || !r.json) {
     throw Object.assign(new Error(`读取 Zotero 条目失败（${r.status}）`), { status: 404, code: 'zotero-not-found' });
   }
   const record = zoteroItemToRecord(r.json);
   record.children = { notes: [], annotations: [], attachments: [] };
-  const cr = await zoteroFetch(`/users/0/items/${encodeURIComponent(key)}/children?limit=100`, 15000);
+  // 独立附件自身就是可读取文件，不会作为自己的子项出现在 /children。
+  if (record.zoteroItemType === 'attachment') record.children.attachments.push(zoteroAttachmentToRecord(r.json));
+  const cr = await fetchItem(`/users/0/items/${encodeURIComponent(key)}/children?limit=100`, 15000);
   if (cr.ok && Array.isArray(cr.json)) {
     for (const child of cr.json) {
       const d = child.data || {};
@@ -863,13 +876,7 @@ async function zoteroItem(key) {
           type: String(d.annotationType || ''),
         });
       } else if (d.itemType === 'attachment') {
-        record.children.attachments.push({
-          key: child.key,
-          title: String(d.title || d.filename || '附件'),
-          contentType: String(d.contentType || ''),
-          filename: String(d.filename || ''),
-          linkMode: String(d.linkMode || ''),
-        });
+        record.children.attachments.push(zoteroAttachmentToRecord(child));
       }
     }
   }
@@ -879,7 +886,7 @@ async function zoteroItem(key) {
   for (const att of record.children.attachments) {
     if (!att.key) continue;
     try {
-      const ar = await zoteroFetch(
+      const ar = await fetchItem(
         `/users/0/items/${encodeURIComponent(att.key)}/children?itemType=annotation&limit=100`,
         15000,
       );
