@@ -1,0 +1,61 @@
+{
+  "name": "dsh-medresearch-model",
+  "version": "0.2.4",
+  "description": "医学文献与证据工作台：DSH 模型接入、工作台入口与受管本地资源部署。",
+  "license": "MIT",
+  "type": "module",
+  "main": "./plugin/lib/index.js",
+  "exports": {
+    ".": "./plugin/lib/index.js",
+    "./client": "./plugin/lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "plugin/",
+    "vendor/pdfjs/",
+    "fixtures/",
+    "医学研究工作台.html",
+    "bridge/server.mjs",
+    "bridge/README.md",
+    "tools/BioMCP-LICENSE.txt",
+    "tools/biomcp-manifest.json",
+    "assets/biomcp-0.9.3-windows-x64.exe.gz",
+    "market-assets.json",
+    "scripts/install-model-plugin.mjs",
+    "scripts/prepare-market-install.mjs",
+    "scripts/start-bridge.ps1",
+    "安装或升级医学工作台.cmd",
+    "旧版转市场安装.cmd",
+    "启动医学工作台服务（后台）.cmd",
+    "启动医学工作台服务.cmd",
+    "docs/客户安装与模型配置.md",
+    "README-客户版.md",
+    "README.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md",
+    "dsh.plugin.json",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "build": "node scripts/build-single.mjs",
+    "build:market": "node scripts/build-market-package.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "medresearchWorkbench": {
+    "formatVersion": 1,
+    "manifest": "market-assets.json"
+  },
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.1-rc.2"
+  }
+}

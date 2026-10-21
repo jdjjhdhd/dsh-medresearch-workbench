@@ -476,7 +476,8 @@
       reader: { q: '', filter: 'all', tab: 'notes', showList: false, aside: false },
       search: { tab: 'lit', q: '', disease: '', drug: '', yearFrom: '', yearTo: '', phase: '', trialStatus: '', status: '', intervention: '', condition: '' },
       cases: {},
-      tasks: { q: '', priority: '', status: '' }
+      tasks: { q: '', priority: '', status: '' },
+      attachItemId: ''
     },
     search: { loading: false, error: '', results: { lit: null, trials: null, drug: null }, meta: { lit: null, trials: null, drug: null } },
     drawer: { type: '', id: '' },
@@ -819,6 +820,17 @@
     var id = str(x.id) || uid('it');
     var title = str(x.title) || '(未命名资料)';
     var status = READ_STATUS[x.readStatus] ? x.readStatus : 'unread';
+    var zoteroContentType = str(x.zoteroContentType);
+    var zoteroFilename = str(x.zoteroFilename);
+    var attachmentKey = str(x.attachmentKey);
+    if (str(x.filePath)) attachmentKey = '';
+    else if (str(x.zoteroItemType) === 'attachment') {
+      var mime = zoteroContentType.toLowerCase().split(';')[0].trim();
+      var isPdf = mime ? mime === 'application/pdf' || mime === 'application/x-pdf'
+        || (mime === 'application/octet-stream' && /\.pdf$/i.test(zoteroFilename)) : /\.pdf$/i.test(zoteroFilename);
+      if ((mime || zoteroFilename) && !isPdf) attachmentKey = '';
+      else attachmentKey = attachmentKey || str(x.zoteroKey);
+    }
     return {
       id: id,
       title: title,
@@ -832,7 +844,9 @@
       zoteroKey: str(x.zoteroKey),
       zoteroRef: str(x.zoteroRef),
       zoteroItemType: str(x.zoteroItemType),
-      attachmentKey: str(x.attachmentKey),
+      zoteroContentType: zoteroContentType,
+      zoteroFilename: zoteroFilename,
+      attachmentKey: attachmentKey,
       abstract: str(x.abstract),
       url: str(x.url),
       filePath: str(x.filePath),
@@ -1706,6 +1720,7 @@
       case 'addItem': openAddMenu(el.getAttribute('data-topic') || ''); break;
       case 'addZotero': openZoteroModal(el.getAttribute('data-topic') || ''); break;
       case 'addLocal': openLocalFileModal(el.getAttribute('data-topic') || ''); break;
+      case 'attachPdf': APP.ui.attachItemId = id; $('#filePdf').click(); break;
       case 'addManual': openItemModal({ topicId: el.getAttribute('data-topic') || '' }); break;
       case 'demoClear': clearDemoData(); break;
       case 'demoAdd': addDemoData(); break;
@@ -3105,6 +3120,7 @@ document.addEventListener('change', function (ev) {
     openModal({ title: '添加资料', body: body, hideSubmit: true, focus: false });
   }
   function openLocalFileModal(topicId) {
+    APP.ui.attachItemId = '';
     var body = '<div class="formGrid">' +
       '<div class="field span2"><label>本地文件</label><input class="input" name="filePath" required placeholder="绝对路径，例如 D:\\papers\\paper.pdf；或点击下方选择文件上传到项目" /></div>' +
       '<div class="field span2"><div class="flex"><button type="button" class="btn btnPrimary" data-act="pickPdf">选择 PDF 文件并保存到本机</button><span class="muted">本地文件服务会自动检测/启动；也可直接粘贴路径。</span></div></div>' +
@@ -3189,6 +3205,7 @@ document.addEventListener('change', function (ev) {
       if (!r.ok) throw new Error((r.json && r.json.error && r.json.error.message) || ('HTTP ' + r.status));
       var z = r.json.item;
       var pdf = (z.children.attachments || []).filter(function (a) { return /pdf/i.test(a.contentType) || /\.pdf$/i.test(a.filename); })[0];
+      var selfAttachment = z.zoteroItemType === 'attachment' ? (z.children.attachments || []).filter(function (a) { return a.key === z.zoteroKey; })[0] : null;
       var res = upsertItem({
         title: z.title,
         type: z.zoteroItemType === 'journalArticle' ? '期刊文献' : z.zoteroItemType === 'conferencePaper' ? '会议摘要' : '其他',
@@ -3202,6 +3219,8 @@ document.addEventListener('change', function (ev) {
         zoteroKey: z.zoteroKey,
         zoteroRef: z.zoteroRef,
         zoteroItemType: z.zoteroItemType,
+        zoteroContentType: selfAttachment ? selfAttachment.contentType : '',
+        zoteroFilename: selfAttachment ? selfAttachment.filename : '',
         attachmentKey: pdf ? pdf.key : '',
         tags: z.tags,
         annotations: (z.children.annotations || []).map(function (a) {
@@ -3213,6 +3232,11 @@ document.addEventListener('change', function (ev) {
         topicIds: APP.zoteroTopicId ? [APP.zoteroTopicId] : [],
         source: { type: 'zotero', label: 'Zotero 本地库', at: Date.now() }
       });
+      if (selfAttachment) {
+        res.item.zoteroContentType = str(selfAttachment.contentType) || res.item.zoteroContentType;
+        res.item.zoteroFilename = str(selfAttachment.filename) || res.item.zoteroFilename;
+      }
+      res.item.attachmentKey = normalizeItem(res.item).attachmentKey;
       var importedNotes = 0;
       (z.children.notes || []).forEach(function (n) {
         if (!n.body) return;
@@ -3584,7 +3608,7 @@ document.addEventListener('change', function (ev) {
     }
     if (READER.status === 'abstract') {
       var meta = '<div class="chips" style="margin-bottom:10px"><span class="chip chipWarn">仅摘要</span><span class="chip">未读取全文</span>' + (item.doi ? '<span class="chip chipKey mono">DOI ' + esc(item.doi) + '</span>' : '') + (item.pmid ? '<span class="chip chipKey mono">PMID ' + esc(item.pmid) + '</span>' : '') + '</div>';
-      return '<div class="readerText" id="readerText">' + meta + '<h3>' + esc(item.title) + '</h3><div class="muted" style="margin-bottom:12px">' + esc(itemMetaLine(item)) + '</div>' + (item.abstract ? item.abstract.split(/\n{2,}/).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') : '<p class="muted">没有可用的摘要或全文。可粘贴全文后再提问。</p>') + '<div class="flex" style="margin-top:14px"><button class="btn btnMini" data-act="pasteFulltext">粘贴全文以提高问答依据</button>' + (item.url ? '<button class="btn btnMini" data-act="openExternal" data-url="' + esc(item.url) + '">打开来源链接</button>' : '') + '</div></div>';
+      return '<div class="readerText" id="readerText">' + meta + '<h3>' + esc(item.title) + '</h3><div class="muted" style="margin-bottom:12px">' + esc(itemMetaLine(item)) + '</div>' + (item.abstract ? item.abstract.split(/\n{2,}/).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') : '<p class="muted">没有可用的摘要或全文。可以为本资料关联自己的 PDF，或粘贴全文后再提问。</p>') + '<div class="flex" style="margin-top:14px"><button class="btn btnPrimary btnMini" data-act="attachPdf" data-id="' + esc(item.id) + '">为本资料选择 / 关联 PDF</button><button class="btn btnMini" data-act="pasteFulltext">粘贴全文以提高问答依据</button>' + (item.url ? '<button class="btn btnMini" data-act="openExternal" data-url="' + esc(item.url) + '">打开来源链接</button>' : '') + '</div></div>';
     }
     if (READER.status === 'idle') {
       return '<div class="pdfState">正在准备原文…</div>';
@@ -3653,7 +3677,7 @@ document.addEventListener('change', function (ev) {
       '<div class="k">页数</div><div class="v">' + (READER.numPages || '—') + '</div>' +
       '<div class="k">可问答文本</div><div class="v">' + (textLen ? textLen.toLocaleString() + ' 字符 · ' + READER.textChunks.length + ' 段' : (READER.status === 'abstract' ? '仅摘要' : '尚未提取')) + '</div>' +
       '</div>' +
-      '<div class="divider"></div><div class="flex"><button class="btn btnMini" data-act="reloadPdf">重新解析</button><button class="btn btnMini" data-act="openPdfFile">打开原文件</button><button class="btn btnMini" data-act="pasteFulltext">粘贴全文</button><button class="btn btnMini" data-act="sendNative">交给原生会话</button></div>' +
+      '<div class="divider"></div><div class="flex">' + (!item.filePath && !item.attachmentKey ? '<button class="btn btnPrimary btnMini" data-act="attachPdf" data-id="' + esc(item.id) + '">关联本地 PDF</button>' : '') + '<button class="btn btnMini" data-act="reloadPdf">重新解析</button><button class="btn btnMini" data-act="openPdfFile">打开原文件</button><button class="btn btnMini" data-act="pasteFulltext">粘贴全文</button><button class="btn btnMini" data-act="sendNative">交给原生会话</button></div>' +
       '<div class="sub mt12">批注只记录当前 PDF 的页码与引文；如果原文版本不同，页码可能不一致。无法定位的引文会如实显示，不生成不存在的页码。</div>';
   }
 
@@ -5352,11 +5376,13 @@ document.addEventListener('change', function (ev) {
   });
   $('#filePdf').addEventListener('change', function () {
     var file = this.files && this.files[0];
+    var attachId = APP.ui.attachItemId || '';
+    APP.ui.attachItemId = '';
     this.value = '';
-    if (file) uploadPdfFile(file);
+    if (file) uploadPdfFile(file, attachId);
   });
 
-  async function uploadPdfFile(file) {
+  async function uploadPdfFile(file, attachItemId) {
     if (!APP.bridge.online) {
       toast('上传需要本地服务；也可以直接填写本机绝对路径');
       return;
@@ -5381,17 +5407,40 @@ document.addEventListener('change', function (ev) {
       }, 90000);
       if (!r.ok) throw new Error((r.json && r.json.error && r.json.error.message) || ('HTTP ' + r.status));
       var p = r.json.path;
-      var res = upsertItem({
-        title: file.name.replace(/\.pdf$/i, ''),
-        type: '期刊文献',
-        filePath: p,
-        source: { type: 'local', label: '本地上传', at: Date.now() }
-      });
-      markDirty({ immediate: true });
-      closeModal();
-      render();
-      toast(res && res.merged ? '已合并到现有资料' : 'PDF 已加入资料库');
+      var attached = attachItemId ? findItem(attachItemId) : null;
+      if (attachItemId && !attached) {
+        APP.ui.attachItemId = '';
+        toast('原资料已不存在，未创建新资料');
+        return;
+      }
+      if (attached) {
+        attached.filePath = p;
+        attached.attachmentKey = '';
+        attached.updatedAt = Date.now();
+        attached.lastOpenedAt = Date.now();
+        if (attached.readStatus === 'unread') attached.readStatus = 'reading';
+        if (!attached.source || attached.source.type === 'manual') {
+          attached.source = { type: 'local', label: '关联本地 PDF', at: Date.now() };
+        }
+        markDirty({ immediate: true });
+        closeModal();
+        APP.ui.attachItemId = '';
+        openReader(attached.id);
+        toast('PDF 已关联到当前资料');
+      } else {
+        var res = upsertItem({
+          title: file.name.replace(/\.pdf$/i, ''),
+          type: '期刊文献',
+          filePath: p,
+          source: { type: 'local', label: '本地上传', at: Date.now() }
+        });
+        markDirty({ immediate: true });
+        closeModal();
+        render();
+        toast(res && res.merged ? '已合并到现有资料' : 'PDF 已加入资料库');
+      }
     } catch (err) {
+      APP.ui.attachItemId = '';
       toast('上传失败：' + apiErrorMessage(err));
     }
   }

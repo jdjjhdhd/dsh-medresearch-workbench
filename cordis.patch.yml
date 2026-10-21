@@ -1,0 +1,4 @@
+# 市场包与手动安装沿用同一个插件身份，避免出现重复入口。
+- insert:
+    - id: medresearch-workbench-market
+      name: dsh-medresearch-model

@@ -1,0 +1,11 @@
+{
+  "name": "dsh-medresearch-model",
+  "description": "医学文献与证据工作台的 DSH 会话模型跟随、自定义 OpenAI 兼容 API、项目/窗口初始化与本地文件服务插件。",
+  "version": "0.2.4",
+  "entry": {
+    "name": "dsh-medresearch-model",
+    "inject": [
+      "webServer"
+    ]
+  }
+}
